@@ -14,4 +14,8 @@ For usage, architecture, and other documentation, see the website.
 
 We ❤️ our contributors! If you're interested in helping us out, please head over to our [Contributing guide](./CONTRIBUTING.md) and be sure to look at main or the release of interest to you.
 
-This community has a [Code of Conduct](./CODE_OF_CONDUCT.md). Please make sure to follow it
+This community has a [Code of Conduct](./CODE_OF_CONDUCT.md). Please make sure to follow it.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
