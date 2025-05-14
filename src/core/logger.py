@@ -39,7 +39,7 @@ def read_latest_logs(n=50):
             logs.append(json.loads(line))
         except json.JSONDecodeError:
             continue
-    return logs[::-1]  # Recent last
+    return logs[::-1] 
 
 def initialize_logger():
     """

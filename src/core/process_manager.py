@@ -1,10 +1,10 @@
 import multiprocessing
 import os
 import time
-from cli import cli  # Placeholder for future CLI integration
+from cli import cli  
 from src.core.port_allocator import PortAllocator
 from src.core.logger import log_event
-from src.core.monitor import monitor  # Assuming monitor is initialized globally
+from src.core.monitor import monitor  
 from config import PROCESS_TIMEOUT
 
 
@@ -25,7 +25,6 @@ class Handler:
         Returns:
             tuple: (num_parents, num_children)
         """
-        # Placeholder for dynamic CLI input (e.g., cli.get_p_processes())
         return self.test_p_process, self.test_c_process
 
 
@@ -58,11 +57,10 @@ class ProcessCreator:
         log_event(f"Child-{child_id} started", pid=pid, port=port)
         print(f"[Child-{child_id}] PID: {pid} running on port {port}")
 
-        # Register with monitor (optional)
         try:
             monitor.register_process(pid, port, role=f"child-{child_id}")
         except:
-            pass  # Failsafe if monitor not yet set up
+            pass  
 
         start_time = time.time()
         while time.time() - start_time < PROCESS_TIMEOUT:
