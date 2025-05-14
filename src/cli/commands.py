@@ -28,7 +28,6 @@ def handle_create_process(process_type, num_children):
 
     elif process_type == 'child':
         print("👶 Creating standalone child process...")
-        # Normally children are spawned by parents, but you can launch one manually for testing
         port = creator.port_allocator.get_next_free_port()
         creator.child_handler(child_id=1, port=port)
 
