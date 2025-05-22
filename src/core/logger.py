@@ -1,7 +1,7 @@
 import os
 import json
 import datetime
-from config import LOG_DIR, LOG_FILE, LOG_LEVEL
+from .config import LOG_DIR, LOG_FILE, LOG_LEVEL
 
 def ensure_log_dir():
     if not os.path.exists(LOG_DIR):

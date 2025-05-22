@@ -1,7 +1,7 @@
 import os
 import time
 from src.core.logger import read_latest_logs
-from config import MONITOR_REFRESH_RATE
+from .config import MONITOR_REFRESH_RATE
 
 class ProcessMonitor:
     """

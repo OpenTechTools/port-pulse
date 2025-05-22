@@ -1,59 +1,31 @@
-import asyncio
-from src.core.logger import log_event
-from config import BUFFER_SIZE, ENCODING
+"""
+Handles message sending between processes.
+"""
 
+import asyncio
+from .logger import log_event
 
 class MessageQueue:
     """
-    Asynchronous message queue for each process.
-    - Receives messages over TCP.
-    - Sends messages to other ports.
-    - Maintains internal queue for incoming messages.
+    Handles message passing between processes using TCP sockets.
     """
 
-    def __init__(self, host: str = '127.0.0.1', port: int = 5000):
-        self.host = host
-        self.port = port
-        self.queue = asyncio.Queue()
-        self.server = None
-
-    async def start_server(self):
+    async def send_message(self, host, port, message):
         """
-        Starts TCP server to receive incoming messages.
-        """
-        self.server = await asyncio.start_server(
-            self.handle_connection, self.host, self.port
-        )
-        addr = self.server.sockets[0].getsockname()
-        log_event(f"MessageQueue listening on {addr}", port=self.port)
+        Sends a message to the specified host and port.
 
-        async with self.server:
-            await self.server.serve_forever()
-
-    async def handle_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-        """
-        Handles a single incoming message.
-        """
-        data = await reader.read(BUFFER_SIZE)
-        message = data.decode(ENCODING)
-        peername = writer.get_extra_info('peername')
-
-        log_event(f"Received from {peername}: {message}", port=self.port)
-        await self.queue.put(message)
-
-        writer.close()
-        await writer.wait_closed()
-
-    async def send_message(self, target_host: str, target_port: int, message: str):
-        """
-        Sends message to another process via TCP.
+        Args:
+            host (str): Target host (e.g., '127.0.0.1').
+            port (int): Target port.
+            message (str): Message to send.
         """
         try:
-            reader, writer = await asyncio.open_connection(target_host, target_port)
-            writer.write(message.encode(ENCODING))
+            reader, writer = await asyncio.open_connection(host, port)
+            writer.write(message.encode())
             await writer.drain()
-            log_event(f"Sent to {target_host}:{target_port} -> {message}", port=self.port)
             writer.close()
             await writer.wait_closed()
-        except ConnectionRefusedError:
-            log_event(f"Failed to send to {target_host}:{target_port} (connection refused)", level="ERROR", port=self.port)
+            log_event(f"Message sent to port {port}: {message}", port=port)
+        except Exception as e:
+            log_event(f"Failed to send message to port {port}: {e}", port=port, level="ERROR")
+            raise
