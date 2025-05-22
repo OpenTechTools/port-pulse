@@ -4,7 +4,13 @@ Handles command-line parsing and dispatches to corresponding command handlers.
 """
 
 import argparse
-from cli import commands
+from .commands import (
+    handle_init,
+    handle_create_process,
+    handle_send_message,
+    handle_monitor,
+    handle_ui,
+)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -20,7 +26,8 @@ def main():
     # Create Process
     create_parser = subparsers.add_parser('create-process', help='Create parent and/or child processes')
     create_parser.add_argument('--type', choices=['parent', 'child'], required=True, help='Type of process to create')
-    create_parser.add_argument('--children', type=int, default=0, help='Number of children (if parent)')
+    create_parser.add_argument('--parents', type=int, default=1, help='Number of parent processes (if parent)')
+    create_parser.add_argument('--children', type=int, default=0, help='Number of children per parent (if parent)')
 
     # Send Message
     send_parser = subparsers.add_parser('send', help='Send message to a process by port')
@@ -30,17 +37,23 @@ def main():
     # Monitor
     subparsers.add_parser('monitor', help='Start monitor dashboard')
 
+    # UI Dashboard
+    subparsers.add_parser('ui', help='Launch the Tkinter UI dashboard')
+
     args = parser.parse_args()
 
+    # Command dispatcher
     match args.command:
         case 'init':
-            commands.handle_init()
+            handle_init()
         case 'create-process':
-            commands.handle_create_process(args.type, args.children)
+            handle_create_process(args.type, args.parents, args.children)
         case 'send':
-            commands.handle_send_message(args.to, args.message)
+            handle_send_message(args.to, args.message)
         case 'monitor':
-            commands.handle_monitor()
+            handle_monitor()
+        case 'ui':
+            handle_ui()
         case _:
             parser.print_help()
 

@@ -1,17 +1,16 @@
 import multiprocessing
 import os
 import time
-from cli import cli  
-from src.core.port_allocator import PortAllocator
-from src.core.logger import log_event
-from src.core.monitor import monitor  
-from config import PROCESS_TIMEOUT
 
+from .port_allocator import PortAllocator
+from .logger import log_event
+from .monitor import ProcessMonitor
+from .config import PROCESS_TIMEOUT
 
 class Handler:
     """
-    Handler class fetches the number of parent and child processes
-    from CLI or other UI interfaces.
+    Handler class fetches the number of parent and child processes.
+    Used for UI or CLI to customize process creation.
     """
 
     def __init__(self):
@@ -20,7 +19,7 @@ class Handler:
 
     def get_processes(self):
         """
-        Gets the number of parent and child processes to be created.
+        Returns number of parent and child processes to create.
 
         Returns:
             tuple: (num_parents, num_children)
@@ -31,7 +30,7 @@ class Handler:
 class ProcessCreator:
     """
     Creates and manages parent and child processes for PortPulse.
-    Each parent process will spawn its own children.
+    Each parent spawns its own children.
     """
 
     def __init__(self):
@@ -47,34 +46,35 @@ class ProcessCreator:
 
     def child_handler(self, child_id, port):
         """
-        Handler function for a child process.
+        Logic for individual child process.
 
         Args:
-            child_id (int): Child process ID.
-            port (int): Assigned port for the child.
+            child_id (int): Identifier for the child.
+            port (int): Port assigned to this child.
         """
         pid = os.getpid()
         log_event(f"Child-{child_id} started", pid=pid, port=port)
         print(f"[Child-{child_id}] PID: {pid} running on port {port}")
 
         try:
-            monitor.register_process(pid, port, role=f"child-{child_id}")
+            ProcessMonitor.register_process(pid, port, role=f"child-{child_id}")
         except:
-            pass  
+            pass  # Monitoring optional
 
         start_time = time.time()
         while time.time() - start_time < PROCESS_TIMEOUT:
             time.sleep(1)
 
         log_event(f"Child-{child_id} exiting", pid=pid, port=port)
+        self.port_allocator.release_port(port)  # Release the port
 
     def parent_handler(self, parent_id, num_children):
         """
-        Handler for a parent process to spawn child processes.
+        Logic for parent process to spawn children.
 
         Args:
-            parent_id (int): Parent process ID.
-            num_children (int): Number of children to spawn.
+            parent_id (int): Identifier for the parent.
+            num_children (int): How many children to spawn.
         """
         pid = os.getpid()
         parent_port = self.port_allocator.get_next_free_port()
@@ -82,7 +82,7 @@ class ProcessCreator:
         print(f"[Parent-{parent_id}] PID: {pid} running on port {parent_port}")
 
         try:
-            monitor.register_process(pid, parent_port, role=f"parent-{parent_id}")
+            ProcessMonitor.register_process(pid, parent_port, role=f"parent-{parent_id}")
         except:
             pass
 
@@ -99,10 +99,11 @@ class ProcessCreator:
             child.join()
 
         log_event(f"Parent-{parent_id} exiting", pid=pid, port=parent_port)
+        self.port_allocator.release_port(parent_port)  # Release the port
 
     def create_parent_processes(self):
         """
-        Creates multiple parent processes and invokes parent handlers.
+        Launches parent processes and assigns children.
         """
         num_parents, num_children = self.handler.get_processes()
 
@@ -119,7 +120,7 @@ class ProcessCreator:
 
 class PortAssigner:
     """
-    Utility class to assign the next available port to a process.
+    Helper class to get next available port.
     """
 
     def __init__(self, start=5000):
@@ -127,23 +128,25 @@ class PortAssigner:
 
     def assign_port(self):
         """
+        Get next available port.
+
         Returns:
-            int: Next available port.
+            int: Free port number
         """
         return self.port_allocator.get_next_free_port()
 
 
 class ProcessTerminator:
     """
-    Terminates individual or all PortPulse processes.
+    Terminates PortPulse processes gracefully or forcefully.
     """
 
     def terminate_process(self, process):
         """
-        Forcefully terminates a single process.
+        Force kill a process.
 
         Args:
-            process (multiprocessing.Process): Process to terminate.
+            process (multiprocessing.Process): Target process
         """
         if process.is_alive():
             process.terminate()
