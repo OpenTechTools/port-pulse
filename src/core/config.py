@@ -1,7 +1,4 @@
-"""
-Configuration module for PortPulse.
-Defines default settings and constants used across the system.
-"""
+import os
 
 # === Port Configuration ===
 BASE_PORT = 5000               # Starting port for process assignment
@@ -14,8 +11,9 @@ MAX_CHILD_PROCESSES = 10       # Max children per parent
 PROCESS_TIMEOUT = 60           # Time (in seconds) to keep child alive for test/demo
 
 # === Logging ===
-LOG_DIR = "logs"
-LOG_FILE = f"{LOG_DIR}/logs.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../logs"))  # Resolves to ~/Documents/pbl/port-pulse/logs
+LOG_FILE = os.path.join(LOG_DIR, "logs.json")
 LOG_LEVEL = "INFO"             # Levels: DEBUG, INFO, ERROR
 
 # === Monitor ===

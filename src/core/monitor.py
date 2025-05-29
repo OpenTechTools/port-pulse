@@ -1,60 +1,57 @@
 import os
 import time
 from src.core.logger import read_latest_logs
+from src.core.process_registry import ProcessRegistry
 from .config import MONITOR_REFRESH_RATE
+
 
 class ProcessMonitor:
     """
-    Tracks active processes and displays real-time dashboard.
+    Live dashboard showing process states and recent logs using a global registry.
     """
 
     def __init__(self, refresh_rate=MONITOR_REFRESH_RATE):
         self.refresh_rate = refresh_rate
-        self.tracked_processes = []
-
-    def register_process(self, pid, port, role):
-        """
-        Add process info to monitor.
-        """
-        self.tracked_processes.append({
-            "pid": pid,
-            "port": port,
-            "role": role,
-            "alive": True
-        })
+        self.registry = ProcessRegistry()
 
     def check_process_alive(self, pid):
         """
-        Check if the process is currently running.
+        Check if a process is still running.
         """
         try:
-            os.kill(pid, 0)
+            os.kill(int(pid), 0)
             return True
         except OSError:
             return False
 
-    def refresh_status(self):
-        """
-        Update status of all tracked processes.
-        """
-        for proc in self.tracked_processes:
-            proc["alive"] = self.check_process_alive(proc["pid"])
-
     def show_dashboard(self):
         """
-        Terminal dashboard for process statuses and recent logs.
+        Continuously prints the live dashboard.
         """
         while True:
             os.system("clear" if os.name == "posix" else "cls")
-            self.refresh_status()
 
-            print("=== PortPulse Process Monitor ===")
-            for proc in self.tracked_processes:
-                status = "🟢 ALIVE" if proc["alive"] else "🔴 DEAD"
-                print(f"[{status}] {proc['role'].upper()} | PID: {proc['pid']} | Port: {proc['port']}")
+            print("=== 🧠 PortPulse Process Monitor ===\n")
 
-            print("\n=== Recent Logs ===")
-            logs = read_latest_logs(n=5)
+            # Parents
+            parents = self.registry.get_all_parents()
+            print("👨‍👧 PARENT PROCESSES")
+            if not parents:
+                print("  No parent processes registered.")
+            for pid, info in parents.items():
+                status = "🟢 ALIVE" if self.check_process_alive(int(pid)) else "🔴 DEAD"
+                print(f"  [{status}] PID: {pid} | Port: {info['port']} | Children: {len(info['children'])}")
+
+            print("\n👶 CHILD PROCESSES")
+            children = self.registry.get_all_children()
+            if not children:
+                print("  No child processes registered.")
+            for pid, info in children.items():
+                status = "🟢 ALIVE" if self.check_process_alive(int(pid)) else "🔴 DEAD"
+                print(f"  [{status}] PID: {pid} | Port: {info['port']} | Parent PID: {info['parent']}")
+
+            print("\n=== 📜 Recent Logs ===")
+            logs = read_latest_logs(n=6)
             for log in logs:
                 print(f"{log['timestamp']} | PID {log['pid']} | {log['level']}: {log['message']}")
 

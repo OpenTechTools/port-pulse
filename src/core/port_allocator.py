@@ -1,27 +1,28 @@
 import socket
 import os
-import portalocker  # Cross-platform file locking
+import portalocker  # Ensure this is installed: pip install portalocker
 
 class PortAllocator:
     """
-    Cross-platform PortAllocator that ensures unique port assignment across processes.
-    Uses file-based locking and tracking.
+    Cross-platform port allocator that assigns and tracks ports across processes
+    using file locking and availability checking.
     """
 
-    def __init__(self, start_port=5000, end_port=6000, lockfile='/tmp/port_allocator.lock'):
+    def __init__(self, start_port=5000, end_port=6000,
+                 lockfile='/tmp/port_allocator.lock',
+                 used_ports_file='/tmp/used_ports.txt'):
         self.start_port = start_port
         self.end_port = end_port
         self.lockfile = lockfile
-        self.used_ports_file = '/tmp/used_ports.txt'
+        self.used_ports_file = used_ports_file
 
-        # Ensure used_ports_file exists
+        os.makedirs(os.path.dirname(self.used_ports_file), exist_ok=True)
         if not os.path.exists(self.used_ports_file):
-            with open(self.used_ports_file, 'w') as f:
-                f.write('')
+            open(self.used_ports_file, 'w').close()
 
     def is_port_available(self, port):
         """
-        Checks if a specific port is available on localhost.
+        Check if the port is free on localhost.
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -33,22 +34,23 @@ class PortAllocator:
 
     def get_next_free_port(self):
         """
-        Returns the next available port in the range, ensuring cross-process uniqueness.
+        Return the next available and unused port within the defined range.
+        Locks the operation to prevent conflicts across processes.
         """
-        with portalocker.Lock(self.lockfile, timeout=10):
+        with portalocker.Lock(self.lockfile, timeout=5):
             used_ports = self._read_used_ports()
             for port in range(self.start_port, self.end_port):
                 if port not in used_ports and self.is_port_available(port):
                     used_ports.add(port)
                     self._write_used_ports(used_ports)
                     return port
-        raise RuntimeError("No available ports in the defined range.")
+        raise RuntimeError("No available ports found in the defined range.")
 
     def release_port(self, port):
         """
-        Releases a previously used port so it can be reused.
+        Release a port from the used list so it can be reused later.
         """
-        with portalocker.Lock(self.lockfile, timeout=10):
+        with portalocker.Lock(self.lockfile, timeout=5):
             used_ports = self._read_used_ports()
             if port in used_ports:
                 used_ports.remove(port)
@@ -56,15 +58,29 @@ class PortAllocator:
 
     def _read_used_ports(self):
         """
-        Reads currently allocated ports from the file.
+        Read the list of currently used ports from the tracking file.
         """
-        with open(self.used_ports_file, 'r') as f:
-            content = f.read().strip()
-            return set(map(int, content.split())) if content else set()
+        try:
+            with open(self.used_ports_file, 'r') as f:
+                content = f.read().strip()
+                return set(map(int, content.split())) if content else set()
+        except Exception as e:
+            print(f"[PortAllocator] Failed to read used ports: {e}")
+            return set()
 
     def _write_used_ports(self, ports):
         """
-        Writes the updated port list back to the file.
+        Write the set of used ports back to the file.
         """
-        with open(self.used_ports_file, 'w') as f:
-            f.write(' '.join(map(str, ports)))
+        try:
+            with open(self.used_ports_file, 'w') as f:
+                f.write(' '.join(map(str, sorted(ports))))
+        except Exception as e:
+            print(f"[PortAllocator] Failed to write used ports: {e}")
+
+    def reset(self):
+        """
+        (Optional) Reset the used ports file – useful for testing or dev.
+        """
+        with portalocker.Lock(self.lockfile, timeout=5):
+            open(self.used_ports_file, 'w').close()
