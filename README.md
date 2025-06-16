@@ -1,15 +1,36 @@
-# PORT PULSE
-## About
-**PortPulse** is a system designed to improve how processes communicate within an operating system. Instead of relying on traditional methods like shared memory or pipes, PortPulse utilizes dedicated network ports to enable fast, asynchronous messaging between processes. Each process whether a parent or child is assigned a port, allowing it to send and receive messages efficiently.
+# PortPulse: Inter-Process Communication System
 
-Using multiprocessing, we simulate real OS-like process creation, while asyncio ensures smooth, non-blocking communication. A built-in logging and monitoring system tracks active processes, message flows, and system performance. This project provides a hands-on approach to understanding inter-process communication (IPC) and OS-level multitasking while offering a real-time UI to visualize interactions.
+PortPulse is a Python-based system designed to improve how processes communicate within an operating system. Instead of relying on traditional methods like shared memory or pipes, PortPulse utilizes dedicated network ports to enable fast and reliable data exchange. It is ideal for academic and educational purposes, especially for learning about operating system fundamentals and inter-process communication (IPC).
 
-**PortPulse** is an academic project that demonstrates how modern systems manage communication, making it a great learning tool for understanding OS fundamentals.
+## Features
 
-## Website
+- Fast and reliable IPC using dedicated network ports
+- Command-line interface (CLI) for process and message management
+- Real-time monitoring and logging of process activities
+- Designed as an educational tool for OS and IPC learning
 
-For usage, architecture, and other documentation, see the website.
+## Installation
 
+### 1. Clone the repository
+
+```bash
+git clone [https://github.com/OpenTechTools/port-pulse.git]
+````
+
+### 2\. Navigate to the project directory
+
+```bash
+cd port-pulse
+```
+
+### 3\. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+## Usage
+
+PortPulse provides a CLI to manage processes and communication between them.
 ## Contributing
 
 We ❤️ our contributors! If you're interested in helping us out, please head over to our [Contributing guide](./CONTRIBUTING.md) and be sure to look at main or the release of interest to you.
